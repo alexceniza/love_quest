@@ -34,23 +34,23 @@ PARTNER_COLOR = (255, 120, 190)     # princess dress
 
 # One message pops up for each love letter collected (8 in the game).
 MEMORIES = [
-    "Fun fact: you are the cutest person in this game.",
-    "You are my favourite notification.",
-    "Just checking... are you smiling yet?",
-    "You look good even in pixel form.",
-    "Our vibe? Unmatched. Undefeated.",
-    "Warning: I might steal your food later.",
-    "I would still choose you in every single world.",
-    "Let's go down and feed your hungry ass.",
+    "Okay... I know you've been waiting a while.",
+    "And I know you were hungry the whole time.",
+    "I'm sorry for making you wait, my love.",
+    "Your tummy deserved better. So did you.",
+    "Thank you for being so patient with me.",
+    "I promise I'll make it up to you.",
+    "Next time, the snacks will be ready before you are.",
+    "Now that you're fed, I'm all yours.",
 ]
 
 # Shown on the final screen after the rescue.
 ENDING_LINES = [
-    "You beat the Heartbreaker,",
-    "you collected every letter,",
-    "and now you've earned the best reward...",
+    "Sorry I kept my hungry princess waiting.",
+    "You were so patient (mostly),",
+    "and now that your tummy is happy,",
     "",
-    "Food. Let's go eat, my love.",
+    "I'm all yours. I love you.",
 ]
 
 TOTAL_TIME = 300                    # seconds (5 minutes)
@@ -882,12 +882,27 @@ class Game:
         pygame.display.flip()
 
 
+def fit_to_screen(game):
+    """On a phone held sideways, widen the game so it fills the whole screen."""
+    global W
+    new_w = touch.best_width(H, 960)
+    if new_w and abs(new_w - W) > 8:
+        W = new_w
+        game.screen = pygame.display.set_mode((W, H))
+        game.title_bg = make_gradient((255, 150, 190), (120, 80, 200))
+        TOUCH.resize(W, H)
+
+        
 async def main():
     pygame.init()
     game = Game()
     clock = pygame.time.Clock()
     running = True
+    frame = 0
     while running:
+        if frame % 30 == 0:  # twice a second, check if the phone was turned
+            fit_to_screen(game)
+        frame += 1
         pressed = set()
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:

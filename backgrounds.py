@@ -2,7 +2,7 @@
 Pixel-art parallax backgrounds for Love Quest, one theme per world.
 
 World 1  The Meadow of First Dates: sunny park, trees, a bench and heart balloons
-World 2  Long Distance Skies:       a calm airport with a terminal, gates and a control tower
+World 2  Long Distance Skies:       inside the airport: big windows, departure boards, seats
 World 3  Castle of the Heartbreaker: blood-red moon, castle towers, flickering torches
 
 Each layer is drawn small (320 x 174) and scaled up 3x with no smoothing,
@@ -111,73 +111,109 @@ def _world1():
     for i, (hx, hy, col) in enumerate(((bx + 2, gy - 34, (240, 60, 100)), (bx + 10, gy - 40, (255, 130, 170)))):
         pygame.draw.line(near, (240, 240, 240), (hx + 3, hy + 6), (bx + 8, gy - 11))
         _heart(near, hx, hy, col)
-    return [(sky, 0), (sun, 0.02), (clouds, 0.08), (far, 0.2), (near, 0.45)]
+    return [(sky, 0), (sun, 0.02, "once"), (clouds, 0.08), (far, 0.2), (near, 0.45)]
 
 
 # ---------------------------------------------------------------------
-#  World 2: Long Distance Skies (the airport)
+#  World 2: Long Distance Skies (inside the airport terminal)
 # ---------------------------------------------------------------------
-def _mini_plane(s, x, y, col, tail=(235, 140, 160)):
-    pygame.draw.rect(s, col, (x, y + 2, 12, 3))            # body
-    pygame.draw.rect(s, col, (x + 12, y + 3, 2, 1))        # nose
-    pygame.draw.rect(s, tail, (x, y, 2, 3))                # tail
-    pygame.draw.rect(s, col, (x + 5, y + 5, 3, 2))         # wing
+WIN_TOP, WIN_BOTTOM = 30, 112     # the big terminal windows (low-res y)
+HORIZON = 96                      # where the tarmac starts outside
 
 
-def _parked_plane(s, x, col=(245, 246, 250), tail=(240, 150, 170)):
-    y = GROUND - 12
-    pygame.draw.ellipse(s, col, (x, y, 50, 10))                                   # fuselage
-    pygame.draw.polygon(s, tail, [(x + 2, y + 2), (x + 2, y - 9), (x + 11, y + 2)])  # tail fin
-    _heart(s, x + 2, y - 7, (255, 255, 255))
-    for wx in range(x + 14, x + 42, 4):
-        s.set_at((wx, y + 3), (120, 160, 200))                                   # windows
-    pygame.draw.polygon(s, (205, 210, 225), [(x + 20, y + 7), (x + 30, y + 7), (x + 24, y + 11)])  # wing
-    pygame.draw.rect(s, (90, 95, 110), (x + 12, y + 10, 2, 2))                   # wheels
-    pygame.draw.rect(s, (90, 95, 110), (x + 38, y + 10, 2, 2))
+def _plane_outside(s, x, y, col=(248, 248, 252), tail=(240, 150, 170)):
+    """A parked plane seen through the window. (x, y) is its bottom-left."""
+    pygame.draw.ellipse(s, col, (x, y - 9, 40, 8))
+    pygame.draw.polygon(s, tail, [(x + 2, y - 7), (x + 2, y - 16), (x + 10, y - 7)])
+    _heart(s, x + 2, y - 14, (255, 255, 255))
+    for wx in range(x + 12, x + 34, 4):
+        s.set_at((wx, y - 6), (120, 160, 200))
+    pygame.draw.polygon(s, (205, 210, 225), [(x + 16, y - 3), (x + 25, y - 3), (x + 20, y)])
+
+
+def _pixel_text(s, text, x, y, col):
+    f = pygame.font.Font(None, 11)
+    img = f.render(text, False, col)
+    s.blit(img, (x, y))
+    return img.get_width()
 
 
 def _world2():
     rnd = random.Random(2)
-    sky = _sky((140, 180, 225), (218, 230, 246), bands=12)
-    clouds = _new()
-    for x, y, w in ((15, 22, 30), (120, 42, 22), (200, 15, 36), (285, 52, 20)):
-        _cloud(clouds, x, y, w, (250, 252, 255), (226, 233, 246))
-    # far: control tower and a plane taking off
-    far = _new()
-    col = (170, 185, 210)
-    tx = 60
-    pygame.draw.rect(far, col, (tx, GROUND - 75, 6, 75))
-    pygame.draw.rect(far, col, (tx - 6, GROUND - 86, 18, 11))
-    pygame.draw.rect(far, (205, 228, 242), (tx - 4, GROUND - 84, 14, 4))
-    pygame.draw.line(far, col, (tx + 3, GROUND - 90), (tx + 3, GROUND - 86))
-    far.set_at((tx + 3, GROUND - 91), (235, 100, 110))
-    _mini_plane(far, 228, 38, (255, 255, 255))
-    for i in range(6):
-        far.set_at((216 - i * 7, 45 + i * 4), (240, 170, 190))                   # little heart trail
-    # near: the terminal, big windows, a departures board and parked planes
-    term = _new()
-    top = GROUND - 44
-    wall, frame = (208, 212, 224), (130, 145, 170)
-    glass, shine = (170, 202, 226), (192, 220, 238)
-    pygame.draw.rect(term, wall, (0, top, LW, LH - top))
-    for x in range(LW):
-        roof = top - 4 - int(3 * math.sin(2 * math.pi * x * 2 / LW))
-        pygame.draw.line(term, (155, 170, 195), (x, roof), (x, top))
-    for x in range(4, LW, 20):
-        pygame.draw.rect(term, glass, (x, top + 6, 16, 20))
-        pygame.draw.rect(term, shine, (x + 2, top + 7, 3, 18))
-        pygame.draw.rect(term, frame, (x, top + 6, 16, 20), 1)
-        pygame.draw.line(term, frame, (x + 8, top + 6), (x + 8, top + 25))
-    board_x = 142
-    pygame.draw.rect(term, (45, 50, 65), (board_x, top + 8, 36, 14))
-    for yy in range(top + 10, top + 21, 3):
-        pygame.draw.line(term, (255, 215, 110), (board_x + 3, yy), (board_x + 3 + rnd.randint(12, 28), yy))
-    for px in (30, 220):
-        pygame.draw.rect(term, (175, 180, 195), (px + 44, top + 26, 16, 6))       # jet bridge
-        _parked_plane(term, px)
-    for x in range(2, LW, 8):
-        term.set_at((x, GROUND - 1), (255, 225, 120))                              # runway lights
-    return [(sky, 0), (clouds, 0.08), (far, 0.15), (term, 0.4)]
+    # --- outside, seen through the windows ---
+    sky = _sky((150, 190, 232), (222, 234, 248), bands=10)
+    outside = _new()
+    for x, y, w in ((10, 40, 26), (120, 52, 20), (210, 36, 30)):
+        _cloud(outside, x, y, w, (252, 253, 255), (230, 236, 248))
+    pygame.draw.rect(outside, (150, 156, 168), (0, HORIZON, LW, WIN_BOTTOM - HORIZON))      # tarmac
+    pygame.draw.rect(outside, (140, 180, 120), (0, HORIZON, LW, 2))                         # grass edge
+    for x in range(0, LW, 16):
+        pygame.draw.rect(outside, (240, 240, 240), (x, HORIZON + 9, 8, 1))                  # runway dashes
+    tx = 150                                                                                 # control tower
+    pygame.draw.rect(outside, (175, 188, 210), (tx, HORIZON - 40, 5, 40))
+    pygame.draw.rect(outside, (175, 188, 210), (tx - 5, HORIZON - 49, 15, 9))
+    pygame.draw.rect(outside, (210, 230, 244), (tx - 3, HORIZON - 47, 11, 3))
+    for px in (20, 200):
+        _plane_outside(outside, px, HORIZON + 6)
+    pygame.draw.rect(outside, (255, 255, 255), (262, 44, 12, 3))                            # plane taking off
+    pygame.draw.rect(outside, (240, 150, 170), (262, 42, 2, 3))
+    pygame.draw.rect(outside, (255, 255, 255), (267, 47, 3, 2))
+
+    # --- the terminal wall, with see-through windows ---
+    wall = _new()
+    wall_col, wall_shade = (230, 226, 218), (208, 203, 195)
+    ceil_col, beam = (95, 105, 128), (80, 88, 110)
+    frame = (115, 125, 145)
+    pygame.draw.rect(wall, ceil_col, (0, 0, LW, WIN_TOP))                                   # ceiling
+    for x in range(0, LW, 32):
+        pygame.draw.rect(wall, beam, (x, 0, 3, WIN_TOP))                                    # ceiling beams
+    for x in range(16, LW, 32):                                                             # pendant lights
+        pygame.draw.line(wall, (150, 150, 150), (x, 0), (x, 10))
+        pygame.draw.rect(wall, (90, 95, 105), (x - 3, 10, 7, 2))
+        pygame.draw.rect(wall, (255, 238, 180), (x - 2, 12, 5, 1))
+    pygame.draw.rect(wall, wall_col, (0, WIN_BOTTOM, LW, LH - WIN_BOTTOM))                  # lower wall
+    pygame.draw.rect(wall, wall_shade, (0, WIN_BOTTOM, LW, 2))
+    for x in range(0, LW, 64):                                                              # window frames
+        pygame.draw.rect(wall, frame, (x, WIN_TOP - 2, LW, 2))
+        pygame.draw.rect(wall, frame, (x, WIN_BOTTOM - 1, 64, 2))
+        pygame.draw.rect(wall, frame, (x, WIN_TOP, 3, WIN_BOTTOM - WIN_TOP))
+        pygame.draw.rect(wall, frame, (x + 32, WIN_TOP, 1, WIN_BOTTOM - WIN_TOP))
+    # hanging departures boards and gate signs
+    f = pygame.font.Font(None, 11)
+    for bx, gate in ((34, "GATE 5"), (194, "GATE 14")):
+        bw = f.size("DEPARTURES")[0] + 6
+        pygame.draw.line(wall, (140, 140, 140), (bx + 6, WIN_TOP - 2), (bx + 6, WIN_TOP + 6))
+        pygame.draw.line(wall, (140, 140, 140), (bx + bw - 6, WIN_TOP - 2), (bx + bw - 6, WIN_TOP + 6))
+        pygame.draw.rect(wall, (40, 45, 60), (bx, WIN_TOP + 6, bw, 19))
+        _pixel_text(wall, "DEPARTURES", bx + 3, WIN_TOP + 7, (255, 255, 255))
+        for yy in range(WIN_TOP + 16, WIN_TOP + 24, 3):
+            pygame.draw.line(wall, (255, 215, 110), (bx + 3, yy), (bx + 3 + rnd.randint(bw // 2, bw - 8), yy))
+        gx = bx + bw + 20
+        gw = f.size(gate)[0] + 5
+        pygame.draw.line(wall, (140, 140, 140), (gx + gw // 2, WIN_TOP - 2), (gx + gw // 2, WIN_TOP + 4))
+        pygame.draw.rect(wall, (60, 110, 180), (gx, WIN_TOP + 4, gw, 10))
+        _pixel_text(wall, gate, gx + 3, WIN_TOP + 5, (255, 255, 255))
+
+    # --- the waiting area: seats, plants and a suitcase ---
+    lounge = _new()
+    seat, seat_dark, metal = (95, 135, 195), (70, 105, 160), (150, 155, 165)
+    for sx in (20, 180):
+        pygame.draw.rect(lounge, metal, (sx, GROUND - 4, 30, 1))
+        for c in range(4):
+            x = sx + c * 8
+            pygame.draw.rect(lounge, seat_dark, (x, GROUND - 13, 6, 6))                     # back
+            pygame.draw.rect(lounge, seat, (x, GROUND - 7, 6, 2))                           # seat
+        pygame.draw.rect(lounge, metal, (sx + 2, GROUND - 4, 1, 4))
+        pygame.draw.rect(lounge, metal, (sx + 27, GROUND - 4, 1, 4))
+    for px in (100, 280):                                                                    # plants
+        pygame.draw.polygon(lounge, (170, 110, 80), [(px, GROUND - 8), (px + 8, GROUND - 8), (px + 7, GROUND), (px + 1, GROUND)])
+        for lx, ly in ((px - 2, GROUND - 16), (px + 4, GROUND - 20), (px + 7, GROUND - 15), (px + 1, GROUND - 12)):
+            pygame.draw.ellipse(lounge, (80, 150, 90), (lx, ly, 6, 8))
+    cx = 140                                                                                 # suitcase with a heart sticker
+    pygame.draw.rect(lounge, (240, 150, 175), (cx, GROUND - 12, 10, 12))
+    pygame.draw.rect(lounge, (200, 110, 140), (cx + 3, GROUND - 15, 4, 3), 1)
+    _heart(lounge, cx + 2, GROUND - 9, (255, 255, 255))
+    return [(sky, 0), (outside, 0.1), (wall, 0.35), (lounge, 0.35)]
 
 
 # ---------------------------------------------------------------------
@@ -224,7 +260,7 @@ def _world3():
     for tx in TORCHES:
         pygame.draw.rect(wall, (40, 30, 35), (tx, WALL_TOP + 8, 2, 7))
         pygame.draw.rect(wall, (40, 30, 35), (tx - 1, WALL_TOP + 7, 4, 2))
-    return [(sky, 0), (moon, 0.02), (castle, 0.15), (wall, 0.4)]
+    return [(sky, 0), (moon, 0.02, "once"), (castle, 0.15), (wall, 0.4)]
 
 
 BUILDERS = [_world1, _world2, _world3]
@@ -233,7 +269,7 @@ BUILDERS = [_world1, _world2, _world3]
 def _layers(world):
     world = min(world, len(BUILDERS) - 1)
     if world not in _cache:
-        _cache[world] = [(pygame.transform.scale(img, (LW * PX, LH * PX)), f) for img, f in BUILDERS[world]()]
+        _cache[world] = [(pygame.transform.scale(layer[0], (LW * PX, LH * PX)),) + tuple(layer[1:]) for layer in BUILDERS[world]()]
     return _cache[world]
 
 
@@ -243,15 +279,21 @@ def _layers(world):
 def draw(surf, world, cam, t):
     width = LW * PX
     wall_off = 0
-    for img, factor in _layers(world):
+    for layer in _layers(world):
+        img, factor = layer[0], layer[1]
         off = (int(cam * factor) // PX * PX) % width   # snap to the pixel grid = crisp scrolling
-        surf.blit(img, (-off, 0))
-        surf.blit(img, (width - off, 0))
+        if len(layer) > 2:  # "once": the sun and moon should not repeat on wide screens
+            surf.blit(img, (-(int(cam * factor) // PX * PX), 0))
+            continue
+        x = -off
+        while x < surf.get_width():      # repeat the layer across the whole screen
+            surf.blit(img, (x, 0))
+            x += width
         wall_off = off
     if world == 2:  # flickering torch flames
         for tx in TORCHES:
             flick = (t // 6 + tx) % 3
-            for dx in (-width, 0, width):
+            for dx in (-width, 0, width, 2 * width):
                 x = tx * PX - wall_off + dx
                 if -20 < x < surf.get_width() + 20:
                     y = (WALL_TOP + 7) * PX

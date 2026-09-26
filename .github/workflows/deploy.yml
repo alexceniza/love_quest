@@ -28,6 +28,8 @@ jobs:
         run: pip install pygbag
       - name: Build web version
         run: python -m pygbag --build .
+      - name: Apply mobile patch
+        run: python .github/workflows/mobile_patch.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
