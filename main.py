@@ -20,33 +20,37 @@ import random
 
 import pygame
 
+import backgrounds
+import sprites
+import touch
+
 # =====================================================================
 #  PERSONALIZE ME  <3
 # =====================================================================
 HERO_NAME = "Alex"
-PARTNER_NAME = "My Princess"
+PARTNER_NAME = "Pooka"
 HERO_COLOR = (215, 40, 60)          # hero's cap and shirt
 PARTNER_COLOR = (255, 120, 190)     # princess dress
 
 # One message pops up for each love letter collected (8 in the game).
 MEMORIES = [
-    "Memory #1: The first time I saw you smile.",
-    "Memory #2: Our very first date.",
-    "Memory #3: That time we laughed until we cried.",
-    "Memory #4: Late-night talks about everything.",
-    "Memory #5: The song that always reminds me of you.",
-    "Memory #6: Our favourite place to eat.",
-    "Memory #7: Every adventure is better with you.",
-    "Memory #8: You make every day feel like home.",
+    "Fun fact: you are the cutest person in this game.",
+    "You are my favourite notification.",
+    "Just checking... are you smiling yet?",
+    "You look good even in pixel form.",
+    "Our vibe? Unmatched. Undefeated.",
+    "Warning: I might steal your food later.",
+    "I would still choose you in every single world.",
+    "Let's go down and feed your hungry ass.",
 ]
 
 # Shown on the final screen after the rescue.
 ENDING_LINES = [
-    "No level is too hard,",
-    "no monster too scary,",
-    "as long as you're at the end of it.",
+    "You beat the Heartbreaker,",
+    "you collected every letter,",
+    "and now you've earned the best reward...",
     "",
-    "I love you. Happy us day!",
+    "Food. Let's go eat, my love.",
 ]
 
 TOTAL_TIME = 300                    # seconds (5 minutes)
@@ -55,10 +59,11 @@ TOTAL_TIME = 300                    # seconds (5 minutes)
 W, H = 960, 520
 TILE = 40
 FPS = 60
+TOUCH = touch.TouchControls(W, H)   # on-screen buttons for phones
 GRAVITY = 0.6
 MAX_FALL = 14
 RUN_SPEED = 4.6
-JUMP_SPEED = 12.8
+JUMP_SPEED = 14.0
 
 # Map legend:
 #  #  ground / wall        =  brick platform     ^  spikes (minor obstacle)
@@ -76,11 +81,11 @@ LEVELS = [
             "                                                                                                    ",
             "                                                                                                    ",
             "                                                                                                    ",
+            "                                                                                                    ",      
             "                                           M                                                        ",
-            "                                         =====                                                      ",
-            "           M                                                 M                  F                   ",
+            "                                         =====                                  F                   ",
+            "           M                                                 M                                      ",
             "          ====                     =====                    ====                                    ",
-            "                     =====                                                                          ",
             "                                                                                               X    ",
             "  S            E              ^^      E                  E    ^^    E               ^^    E         ",
             "######################   #######################   #######################   #######################",
@@ -88,20 +93,20 @@ LEVELS = [
         ],
     },
     {
-        "name": "World 2: The Cave of Misunderstandings",
+        "name": "World 2: The Long Distance Skies",
         "sub": "Watch out for Bad Vibes clouds and ride the moving platforms.",
         "sky": ((40, 30, 70), (95, 70, 130)),
-        "ground": (120, 110, 150), "dirt": (70, 60, 95),
+        "ground": (185, 180, 172), "dirt": (135, 128, 120),
         "map": [
             "##############################################################################################################",
             "                                                                                                              ",
             "                                                                                                              ",
             "                                                                                                              ",
             "                                                                                                              ",
-            "                                F                        M                                          F         ",
-            "                            M                          F====                    F                             ",
-            "                          =====                                                                               ",
-            "                                             -                          M                                     ",
+            "                                F                                                                   F         ",
+            "                                                       F                        F                             ",
+            "                            M                            M                                                    ",
+            "                          =====              -          ====            M                                     ",
             "                                                                                                          X   ",
             "  S       E       -           E   ^^    E                   E   ^^                   E  ^^^    E              ",
             "##################      #####################      ####################   ####################################",
@@ -120,9 +125,9 @@ LEVELS = [
             "                                                      c    #",
             "                                                      c    #",
             "                                                      c    #",
-            "                  F       M                           c    #",
-            "                         ====         ====            c    #",
-            "             M                              B         c    #",
+            "                  F                                   c    #",
+            "                          M                           c    #",
+            "             M           ====         ====  B         c    #",
             "                                                      c P  #",
             "  S     E                                             c    #",
             "############   #############################################",
@@ -341,17 +346,7 @@ class Flyer(Body):
         self.y = self.y0 + math.sin(self.t * 2.3) * 35
 
     def draw(self, s, cam):
-        x, y = int(self.x - cam), int(self.y)
-        c = (80, 80, 95)
-        for cx, cy, r in ((x + 10, y + 15, 11), (x + 22, y + 10, 13), (x + 32, y + 16, 10)):
-            pygame.draw.circle(s, c, (cx, cy), r)
-        pygame.draw.rect(s, c, (x + 4, y + 14, 34, 12), border_radius=6)
-        for ex in (x + 15, x + 27):
-            pygame.draw.circle(s, (255, 230, 90), (ex, y + 14), 3)
-        pygame.draw.arc(s, (20, 20, 20), (x + 15, y + 18, 12, 7), 0.2, 2.9, 2)
-        if int(self.t * 20) % 8 < 4:
-            pygame.draw.lines(s, (255, 230, 90), False,
-                              [(x + 20, y + 26), (x + 16, y + 34), (x + 22, y + 34), (x + 18, y + 42)], 2)
+        sprites.draw_plane(s, self, cam)
 
 
 class Boss(Body):
@@ -401,32 +396,45 @@ class Boss(Body):
             self.flash -= 1
 
     def draw(self, s, cam):
-        if self.hp <= 0:
-            return
+        sprites.draw_boss(s, self, cam)
+
+
+class Plane(Body):
+    """Goodbye Plane: flies back and forth, just like all those airport goodbyes."""
+
+    def __init__(self, x, y):
+        super().__init__(x, y + 8, 56,24)
+        self.x0 = x
+        self.vx = 2.2
+        self.t = random.random() * 6
+        self.alive = True
+
+    def update(self, lvl, player):
+        self.t += 0.08
+        self.x += self.vx
+        if abs(self.x - self.x0) > 4 * TILE:
+            self.vx = -self.vx
+        self.y += math.sin(self.t) * 0.5
+
+    def draw(self, s, cam):
         x, y = int(self.x - cam), int(self.y)
-        bob = int(math.sin(self.t) * 2)
-        body = (255, 255, 255) if self.flash % 4 >= 2 else (45, 20, 35)
-        # horns
-        pygame.draw.polygon(s, (230, 220, 200), [(x + 14, y + 20 + bob), (x + 6, y - 8 + bob), (x + 28, y + 12 + bob)])
-        pygame.draw.polygon(s, (230, 220, 200), [(x + 76, y + 20 + bob), (x + 84, y - 8 + bob), (x + 62, y + 12 + bob)])
-        pygame.draw.ellipse(s, body, (x, y + 8 + bob, self.w, self.h - 8))
-        # cape
-        pygame.draw.polygon(s, (120, 10, 30), [(x + 8, y + 40 + bob), (x - 10 * self.facing + 45, y + 100),
-                                               (x + 82, y + 40 + bob)])
-        pygame.draw.ellipse(s, body, (x + 10, y + 30 + bob, 70, 60))
-        # eyes
-        for ex in (x + 30, x + 60):
-            pygame.draw.circle(s, (255, 60, 60), (ex + 4 * self.facing, y + 32 + bob), 7)
-            pygame.draw.circle(s, (255, 230, 120), (ex + 5 * self.facing, y + 32 + bob), 3)
-        pygame.draw.line(s, (255, 60, 60), (x + 20, y + 20 + bob), (x + 40, y + 27 + bob), 4)
-        pygame.draw.line(s, (255, 60, 60), (x + 70, y + 20 + bob), (x + 50, y + 27 + bob), 4)
-        # broken heart emblem
-        cx, cy = x + 45, y + 62 + bob
-        draw_heart(s, cx, cy, 26, (200, 30, 60))
-        pygame.draw.lines(s, (45, 20, 35), False, [(cx, cy - 10), (cx - 4, cy - 3), (cx + 3, cy + 3), (cx, cy + 12)], 3)
-        # feet
-        pygame.draw.rect(s, (30, 10, 20), (x + 15, y + 88, 20, 8), border_radius=3)
-        pygame.draw.rect(s, (30, 10, 20), (x + 55, y + 88, 20, 8), border_radius=3)
+        f = 1 if self.vx > 0 else -1
+        nose = x + self.w if f > 0 else x
+        tail = x if f > 0 else x + self.w
+        # tail fin
+        pygame.draw.polygon(s, (200, 40, 60), [(tail, y + 12), (tail, y - 6), (tail +14 * f, y + 10)])
+        # body 
+        pygame.draw.ellipse(s, (235, 235, 245), (x, y + 6, self.w, 14))
+        # wing
+        pygame.draw.polygon(s, (170, 175, 195), [(x + 22, y + 13), (x + 28 - 8 * f, y + 26), (x + 36 - 8 * f, y + 13)])
+        # windows 
+        for i in range(4):
+            pygame.draw.circle(s, (90, 150, 220), (x + 14 + i * 8, y + 11), 2)
+        # angry cockpit eye
+        ex = nose - 9 * f
+        pygame.draw.circle(s, (255, 255, 255), (ex, y + 12), 4)
+        pygame.draw.circle(s, (0, 0, 0), (ex + f, y + 12), 2)
+        pygame.draw.line(s, (0, 0, 0), (ex - 5 * y + 5), (ex + 4 * f, y + 8), 2)
 
 
 class Shot(Body):
@@ -471,44 +479,11 @@ class Player(Body):
         self.anim = 0.0
 
     def draw(self, s, cam):
-        if self.invuln and (self.invuln // 4) % 2:
-            return
-        x, y, f = int(self.x - cam), int(self.y), self.facing
-        step = int(math.sin(self.anim) * 4) if self.on_ground and abs(self.vx) > 0.5 else 0
-        # legs
-        pygame.draw.rect(s, (40, 60, 150), (x + 5, y + 28, 8, 12 + step // 2))
-        pygame.draw.rect(s, (40, 60, 150), (x + 15, y + 28, 8, 12 - step // 2))
-        pygame.draw.rect(s, (90, 50, 30), (x + 3, y + 37 + step // 2, 11, 4))
-        pygame.draw.rect(s, (90, 50, 30), (x + 14, y + 37 - step // 2, 11, 4))
-        # body + overalls
-        pygame.draw.rect(s, HERO_COLOR, (x + 4, y + 16, 20, 14), border_radius=4)
-        pygame.draw.rect(s, (40, 60, 150), (x + 7, y + 22, 14, 8))
-        # arm holding heart blaster
-        pygame.draw.rect(s, HERO_COLOR, (x + 14 + 6 * f, y + 18, 8, 6))
-        pygame.draw.circle(s, (255, 100, 150), (x + 14 + 14 * f, y + 21), 4)
-        # head
-        pygame.draw.circle(s, (250, 205, 170), (x + 14, y + 10), 9)
-        pygame.draw.circle(s, (0, 0, 0), (x + 14 + 4 * f, y + 9), 2)
-        pygame.draw.line(s, (80, 50, 30), (x + 10 + 3 * f, y + 14), (x + 18 + 3 * f, y + 14), 2)
-        # cap
-        pygame.draw.rect(s, HERO_COLOR, (x + 5, y, 18, 6), border_radius=3)
-        pygame.draw.rect(s, HERO_COLOR, (x + 14 + (0 if f > 0 else -14), y + 4, 14, 3))
+        sprites.draw_hero(s, self, cam)
 
 
 def draw_princess(s, x, y, t, happy=False):
-    bob = int(math.sin(t * 3) * 2) if happy else 0
-    y += bob
-    pygame.draw.polygon(s, PARTNER_COLOR, [(x + 14, y + 16), (x - 2, y + 48), (x + 30, y + 48)])
-    pygame.draw.rect(s, PARTNER_COLOR, (x + 8, y + 14, 12, 12), border_radius=3)
-    pygame.draw.circle(s, (110, 60, 30), (x + 14, y + 8), 11)
-    pygame.draw.rect(s, (110, 60, 30), (x + 3, y + 8, 22, 16), border_radius=4)
-    pygame.draw.circle(s, (250, 210, 180), (x + 14, y + 9), 8)
-    pygame.draw.circle(s, (0, 0, 0), (x + 11, y + 8), 1)
-    pygame.draw.circle(s, (0, 0, 0), (x + 17, y + 8), 1)
-    pygame.draw.arc(s, (200, 60, 80), (x + 10, y + 9, 8, 6), 3.4, 6.0, 2) if happy else \
-        pygame.draw.arc(s, (200, 60, 80), (x + 10, y + 13, 8, 5), 0.3, 2.8, 2)
-    pygame.draw.polygon(s, (255, 210, 60), [(x + 6, y - 1), (x + 8, y - 9), (x + 11, y - 3), (x + 14, y - 11),
-                                            (x + 17, y - 3), (x + 20, y - 9), (x + 22, y - 1)])
+    sprites.draw_partner(s, x, y, t, happy)
 
 
 # ---------------------------------------------------------------------
@@ -725,7 +700,7 @@ class Game:
                 lvl.memories.remove(m)
                 self.collected.add(m[1])
                 self.burst(m[0].centerx, m[0].centery, (255, 100, 150), 16, heart=True)
-                self.show_toast(MEMORIES[m[1] % len(MEMORIES)])
+                self.show_toast(MEMORIES[(len(self.collected) - 1) % len(MEMORIES)])
 
         # goals
         if lvl.door and pr.colliderect(lvl.door):
@@ -762,21 +737,7 @@ class Game:
     # ---------------- draw ----------------
     def draw_world(self):
         s, lvl, cam = self.screen, self.level, self.cam
-        s.blit(lvl.sky, (0, 0))
-        # parallax clouds / castle stars
-        for cx, cy, r in self.clouds:
-            x = (cx - cam * 0.3) % (W + 200) - 100
-            col = (255, 255, 255) if self.level_idx == 0 else (255, 255, 255, 60)
-            if self.level_idx == 0:
-                pygame.draw.circle(s, col, (int(x), cy), r // 2)
-                pygame.draw.circle(s, col, (int(x) + r // 2, cy + 5), r // 2 - 4)
-            else:
-                pygame.draw.circle(s, (255, 240, 200), (int(x), cy), 2)
-        # hills
-        hill = tuple(max(0, c - 40) for c in lvl.data["ground"])
-        for i in range(-1, 8):
-            hx = i * 220 - (cam * 0.5) % 220
-            pygame.draw.circle(s, hill, (int(hx), H + 40), 140)
+        backgrounds.draw(s, self.level_idx, cam, self.t)
 
         dirt, grass = lvl.data["dirt"], lvl.data["ground"]
         c0, c1 = int(cam // TILE), int((cam + W) // TILE) + 1
@@ -916,6 +877,8 @@ class Game:
             text_center(s, "Out of time!", 70, (255, 120, 150), 190)
             text_center(s, "But true love always gets another try.", 34, (255, 255, 255), 250)
             text_center(s, "Press ENTER", 34, (255, 255, 120), 320)
+        if self.state == "play":
+            TOUCH.draw(s)
         pygame.display.flip()
 
 
@@ -933,7 +896,12 @@ async def main():
                 pressed.add(ev.key)
                 if ev.key == pygame.K_ESCAPE and game.state != "title":
                     game.state = "title"
-        game.update(pygame.key.get_pressed(), pressed)
+            TOUCH.handle(ev)
+        held, tapped, tapped_anywhere = TOUCH.poll()
+        pressed |= tapped
+        if tapped_anywhere:
+            pressed.add(pygame.K_RETURN)  # a tap works like Enter on menus
+        game.update(touch.MergedKeys(pygame.key.get_pressed(), held), pressed)
         game.draw()
         clock.tick(FPS)
         await asyncio.sleep(0)  # lets the game run in the browser via pygbag
